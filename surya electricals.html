@@ -271,11 +271,11 @@
     </div>
 
     <!-- Firebase Script Block -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // Your Firebase Configuration - PERMANENT FREE FIRESTORE
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+    
+    <script>
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyB79IN4jaWAH8gJ6EwPjWBM6IqkO9QNpPY",
             authDomain: "surya-electricals-2139e.firebaseapp.com",
@@ -289,14 +289,9 @@
         let useFirebase = true;
 
         // Initialize Firebase
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            console.log("✅ Firestore Connected Successfully!");
-        } catch (e) {
-            console.error("❌ Firestore initialization error:", e);
-            useFirebase = false;
-        }
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        console.log("✅ Firestore Connected Successfully!");
 
         const orderDateInput = document.getElementById('order-date');
         const dateDisplay = document.getElementById('date-display');
@@ -359,9 +354,9 @@
 
             if (useFirebase && db) {
                 try {
-                    const docRef = doc(db, 'orders', selectedDate);
-                    unsubscribe = onSnapshot(docRef, (docSnapshot) => {
-                        currentData = docSnapshot.exists() ? docSnapshot.data() : {};
+                    const docRef = db.collection('orders').doc(selectedDate);
+                    unsubscribe = docRef.onSnapshot((docSnapshot) => {
+                        currentData = docSnapshot.exists ? docSnapshot.data() : {};
                         renderUI();
                     }, (error) => {
                         console.error("Error reading from Firestore:", error);
@@ -376,14 +371,17 @@
             }
         }
 
-        window.loadDateData = subscribeToData;
+        function loadDateData() {
+            subscribeToData();
+        }
 
         async function saveData() {
             const selectedDate = orderDateInput.value;
             if (useFirebase && db) {
                 try {
-                    const docRef = doc(db, 'orders', selectedDate);
-                    await setDoc(docRef, currentData, { merge: true });
+                    const docRef = db.collection('orders').doc(selectedDate);
+                    await docRef.set(currentData, { merge: true });
+                    console.log("✅ Data saved to Firestore");
                 } catch (err) {
                     console.error("Error saving to Firestore:", err);
                     alert("Error saving data. Please check Firestore connection.");
@@ -425,20 +423,20 @@
                             itemsHTML += `
                                 <div class="item-row">
                                     <span class="item-label">8M Plate Type</span>
-                                    <select class="item-input" onchange="window.updateStock('${companyName}', '${modelName}', '8M Plate Type', this.value, true)">
+                                    <select class="item-input" onchange="updateStock('${companyName}', '${modelName}', '8M Plate Type', this.value, true)">
                                         <option value="horizontal" ${plateType === 'horizontal' ? 'selected' : ''}>Horizontal 8M</option>
                                         <option value="square" ${plateType === 'square' ? 'selected' : ''}>Sq Plate 8M</option>
                                     </select>
-                                    <input type="number" class="item-input" placeholder="Stock" min="0" value="${qty}" oninput="window.updateStock('${companyName}', '${modelName}', '8M Plate Type', this.value, false)">
-                                    <button class="btn-icon-danger" onclick="window.deleteItem('${companyName}', '${modelName}', '8M Plate Type')" title="Delete Item"><i class="fa-solid fa-trash-can"></i></button>
+                                    <input type="number" class="item-input" placeholder="Stock" min="0" value="${qty}" oninput="updateStock('${companyName}', '${modelName}', '8M Plate Type', this.value, false)">
+                                    <button class="btn-icon-danger" onclick="deleteItem('${companyName}', '${modelName}', '8M Plate Type')" title="Delete Item"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             `;
                         } else {
                             itemsHTML += `
                                 <div class="item-row">
                                     <span class="item-label">${itemName}</span>
-                                    <input type="number" class="item-input" placeholder="Stock" min="0" value="${itemVal || ''}" oninput="window.updateStock('${companyName}', '${modelName}', '${itemName}', this.value)">
-                                    <button class="btn-icon-danger" onclick="window.deleteItem('${companyName}', '${modelName}', '${itemName}')" title="Delete Item"><i class="fa-solid fa-trash-can"></i></button>
+                                    <input type="number" class="item-input" placeholder="Stock" min="0" value="${itemVal || ''}" oninput="updateStock('${companyName}', '${modelName}', '${itemName}', this.value)">
+                                    <button class="btn-icon-danger" onclick="deleteItem('${companyName}', '${modelName}', '${itemName}')" title="Delete Item"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             `;
                         }
@@ -448,13 +446,13 @@
                         <details class="model-item" open>
                             <summary class="model-summary">
                                 <span><i class="fa-solid fa-microchip"></i> ${modelName}</span>
-                                <button class="btn btn-sm btn-danger" onclick="window.deleteModel(event, '${companyName}', '${modelName}')" title="Delete Model"><i class="fa-solid fa-trash-can"></i></button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteModel(event, '${companyName}', '${modelName}')" title="Delete Model"><i class="fa-solid fa-trash-can"></i></button>
                             </summary>
                             <div class="details-content">
                                 <div class="items-grid">${itemsHTML}</div>
                                 <div class="custom-item-builder">
                                     <input type="text" placeholder="Add custom item name..." id="custom-input-${companyName}-${modelName}">
-                                    <button class="btn btn-sm" onclick="window.addCustomItem('${companyName}', '${modelName}')"><i class="fa-solid fa-plus"></i> Add Item</button>
+                                    <button class="btn btn-sm" onclick="addCustomItem('${companyName}', '${modelName}')"><i class="fa-solid fa-plus"></i> Add Item</button>
                                 </div>
                             </div>
                         </details>
@@ -465,8 +463,8 @@
                     <summary class="company-summary">
                         <span><i class="fa-solid fa-building"></i> ${companyName}</span>
                         <div class="actions-group">
-                            <button class="btn btn-sm btn-secondary" onclick="window.addModel(event, '${companyName}')"><i class="fa-solid fa-plus"></i> Add Model</button>
-                            <button class="btn btn-sm btn-danger" onclick="window.deleteCompany(event, '${companyName}')" title="Delete Company"><i class="fa-solid fa-trash-can"></i></button>
+                            <button class="btn btn-sm btn-secondary" onclick="addModel(event, '${companyName}')"><i class="fa-solid fa-plus"></i> Add Model</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCompany(event, '${companyName}')" title="Delete Company"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </summary>
                     <div class="details-content models-container">${modelsHTML}</div>
@@ -476,16 +474,16 @@
             });
         }
 
-        window.addCompany = () => {
+        function addCompany() {
             const companyName = prompt("Enter New Company Name:");
             if (!companyName) return;
             if (!currentData[companyName]) {
                 currentData[companyName] = {};
                 saveData();
             }
-        };
+        }
 
-        window.addModel = (event, companyName) => {
+        function addModel(event, companyName) {
             event.preventDefault();
             const modelName = prompt("Enter New Model Name:");
             if (!modelName) return;
@@ -502,9 +500,9 @@
                 });
                 saveData();
             }
-        };
+        }
 
-        window.updateStock = (company, model, item, value, isDropdown = false) => {
+        function updateStock(company, model, item, value, isDropdown = false) {
             if (!currentData[company]?.[model]) return;
 
             if (item === "8M Plate Type") {
@@ -519,9 +517,9 @@
                 currentData[company][model][item] = value;
             }
             saveData();
-        };
+        }
 
-        window.addCustomItem = (company, model) => {
+        function addCustomItem(company, model) {
             const inputField = document.getElementById(`custom-input-${company}-${model}`);
             const itemName = inputField.value.trim();
             if (!itemName) {
@@ -530,28 +528,28 @@
             }
             currentData[company][model][itemName] = '';
             saveData();
-        };
+        }
 
-        window.deleteCompany = (event, companyName) => {
+        function deleteCompany(event, companyName) {
             event.preventDefault();
             if (confirm(`Delete ${companyName} and all its models?`)) {
                 delete currentData[companyName];
                 saveData();
             }
-        };
+        }
 
-        window.deleteModel = (event, companyName, modelName) => {
+        function deleteModel(event, companyName, modelName) {
             event.preventDefault();
             if (confirm(`Delete model ${modelName}?`)) {
                 delete currentData[companyName][modelName];
                 saveData();
             }
-        };
+        }
 
-        window.deleteItem = (companyName, modelName, itemName) => {
+        function deleteItem(companyName, modelName, itemName) {
             delete currentData[companyName][modelName][itemName];
             saveData();
-        };
+        }
 
         // Initialize Data Load
         subscribeToData();
