@@ -236,7 +236,7 @@
             </div>
             <div>
                 <div class="sync-status" id="sync-status">
-                    <i class="fa-solid fa-circle-check"></i> Syncing with Firebase ☁️
+                    <i class="fa-solid fa-circle-check"></i> Syncing with Firestore ☁️
                 </div>
             </div>
         </header>
@@ -258,16 +258,15 @@
         <div id="companies-container"></div>
     </div>
 
-    <!-- Script Block -->
+    <!-- Firebase Script Block -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Your Firebase Configuration - LIVE CLOUD SYNC
+        // Your Firebase Configuration - PERMANENT FREE FIRESTORE
         const firebaseConfig = {
             apiKey: "AIzaSyB79IN4jaWAH8gJ6EwPjWBM6IqkO9QNpPY",
             authDomain: "surya-electricals-2139e.firebaseapp.com",
-            databaseURL: "https://surya-electricals-2139e-default-rtdb.firebaseio.com",
             projectId: "surya-electricals-2139e",
             storageBucket: "surya-electricals-2139e.firebasestorage.app",
             messagingSenderId: "787911046009",
@@ -280,10 +279,10 @@
         // Initialize Firebase
         try {
             const app = initializeApp(firebaseConfig);
-            db = getDatabase(app);
-            console.log("✅ Firebase Connected Successfully!");
+            db = getFirestore(app);
+            console.log("✅ Firestore Connected Successfully!");
         } catch (e) {
-            console.error("❌ Firebase initialization error:", e);
+            console.error("❌ Firestore initialization error:", e);
             useFirebase = false;
         }
 
@@ -299,16 +298,25 @@
         ];
 
         let currentData = {};
+        let unsubscribe = null;
 
         function subscribeToData() {
             const selectedDate = orderDateInput.value;
 
+            if (unsubscribe) unsubscribe();
+
             if (useFirebase && db) {
-                const orderRef = ref(db, 'orders/' + selectedDate);
-                onValue(orderRef, (snapshot) => {
-                    currentData = snapshot.val() || {};
-                    renderUI();
-                });
+                try {
+                    const docRef = doc(db, 'orders', selectedDate);
+                    unsubscribe = onSnapshot(docRef, (docSnapshot) => {
+                        currentData = docSnapshot.exists() ? docSnapshot.data() : {};
+                        renderUI();
+                    }, (error) => {
+                        console.error("Error reading from Firestore:", error);
+                    });
+                } catch (e) {
+                    console.error("Error setting up listener:", e);
+                }
             } else {
                 const saved = localStorage.getItem('surya_orders_' + selectedDate);
                 currentData = saved ? JSON.parse(saved) : {};
@@ -318,13 +326,16 @@
 
         window.loadDateData = subscribeToData;
 
-        function saveData() {
+        async function saveData() {
             const selectedDate = orderDateInput.value;
             if (useFirebase && db) {
-                set(ref(db, 'orders/' + selectedDate), currentData).catch(err => {
-                    console.error("Error saving to Firebase:", err);
-                    alert("Error saving data. Please check Firebase connection.");
-                });
+                try {
+                    const docRef = doc(db, 'orders', selectedDate);
+                    await setDoc(docRef, currentData, { merge: true });
+                } catch (err) {
+                    console.error("Error saving to Firestore:", err);
+                    alert("Error saving data. Please check Firestore connection.");
+                }
             } else {
                 localStorage.setItem('surya_orders_' + selectedDate, JSON.stringify(currentData));
                 renderUI();
