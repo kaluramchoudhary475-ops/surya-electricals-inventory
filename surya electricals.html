@@ -236,7 +236,7 @@
             </div>
             <div>
                 <div class="sync-status" id="sync-status">
-                    <i class="fa-solid fa-circle-check"></i> Ready & Editable
+                    <i class="fa-solid fa-circle-check"></i> Syncing with Firebase ☁️
                 </div>
             </div>
         </header>
@@ -263,29 +263,28 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Optional: Replace with your actual Firebase config for live cloud syncing across employees
+        // Your Firebase Configuration - LIVE CLOUD SYNC
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyB79IN4jaWAH8gJ6EwPjWBM6IqkO9QNpPY",
+            authDomain: "surya-electricals-2139e.firebaseapp.com",
+            databaseURL: "https://surya-electricals-2139e-default-rtdb.firebaseio.com",
+            projectId: "surya-electricals-2139e",
+            storageBucket: "surya-electricals-2139e.firebasestorage.app",
+            messagingSenderId: "787911046009",
+            appId: "1:787911046009:web:ac440854694c1d18b775a8"
         };
 
         let db = null;
-        let useFirebase = false;
+        let useFirebase = true;
 
-        // Try initializing Firebase if keys are configured
-        if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getDatabase(app);
-                useFirebase = true;
-            } catch (e) {
-                console.warn("Firebase not configured properly, using Local Storage fallback.");
-            }
+        // Initialize Firebase
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+            console.log("✅ Firebase Connected Successfully!");
+        } catch (e) {
+            console.error("❌ Firebase initialization error:", e);
+            useFirebase = false;
         }
 
         const orderDateInput = document.getElementById('order-date');
@@ -322,7 +321,10 @@
         function saveData() {
             const selectedDate = orderDateInput.value;
             if (useFirebase && db) {
-                set(ref(db, 'orders/' + selectedDate), currentData);
+                set(ref(db, 'orders/' + selectedDate), currentData).catch(err => {
+                    console.error("Error saving to Firebase:", err);
+                    alert("Error saving data. Please check Firebase connection.");
+                });
             } else {
                 localStorage.setItem('surya_orders_' + selectedDate, JSON.stringify(currentData));
                 renderUI();
