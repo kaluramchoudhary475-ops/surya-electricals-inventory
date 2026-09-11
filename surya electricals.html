@@ -255,7 +255,7 @@
             
             <div style="display: flex; gap: 15px; align-items: center;">
                 <!-- Beautiful Date Display Box -->
-                <div class="date-display-box" onclick="document.getElementById('order-date').click()">
+                <div class="date-display-box" onclick="openDatePicker()">
                     <i class="fa-regular fa-calendar-days"></i>
                     <span id="date-display">Today</span>
                 </div>
@@ -270,7 +270,7 @@
         <div id="companies-container"></div>
     </div>
 
-    <!-- Firebase Script Block -->
+    <!-- Firebase SDK from CDN -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
     
@@ -285,11 +285,20 @@
             appId: "1:787911046009:web:ac440854694c1d18b775a8"
         };
 
+        // Global variables
         let db = null;
-        let useFirebase = true;
+        let currentData = {};
+        let unsubscribe = null;
+
+        const defaultItems = [
+            "6A Switch", "16A Switch", "6A Socket", "16A Socket",
+            "1M Plate", "2M Plate", "3M Plate", "4M Plate", "6M Plate",
+            "8M Plate Type", "12M Plate", "16M Plate", "18M Plate", "21M Plate",
+            "2 Way Switch", "1M Bell Switch", "2M Bell Switch"
+        ];
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        const app = firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
         console.log("✅ Firestore Connected Successfully!");
 
@@ -297,26 +306,30 @@
         const dateDisplay = document.getElementById('date-display');
         const container = document.getElementById('companies-container');
 
-        // Function to format date to readable format
+        // Set today's date by default
+        function initializeDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            orderDateInput.value = `${year}-${month}-${day}`;
+            updateDateDisplay();
+            subscribeToData();
+        }
+
+        // Format date to readable format
         function formatDateDisplay(dateString) {
             const date = new Date(dateString);
             const options = { day: 'numeric', month: 'short', year: 'numeric' };
             return date.toLocaleDateString('en-US', options);
         }
 
-        // Function to check if date is today
+        // Check if date is today
         function isToday(dateString) {
             const today = new Date();
             const compareDate = new Date(dateString);
             return today.toDateString() === compareDate.toDateString();
         }
-
-        // Set today's date by default
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        orderDateInput.value = `${year}-${month}-${day}`;
 
         // Update date display
         function updateDateDisplay() {
@@ -328,67 +341,42 @@
             }
         }
 
-        // Initial date display update
-        updateDateDisplay();
+        function openDatePicker() {
+            orderDateInput.click();
+        }
 
-        // Update display when date changes
-        orderDateInput.addEventListener('change', () => {
+        function loadDateData() {
             updateDateDisplay();
-            loadDateData();
-        });
-
-        const defaultItems = [
-            "6A Switch", "16A Switch", "6A Socket", "16A Socket",
-            "1M Plate", "2M Plate", "3M Plate", "4M Plate", "6M Plate",
-            "8M Plate Type", "12M Plate", "16M Plate", "18M Plate", "21M Plate",
-            "2 Way Switch", "1M Bell Switch", "2M Bell Switch"
-        ];
-
-        let currentData = {};
-        let unsubscribe = null;
+            subscribeToData();
+        }
 
         function subscribeToData() {
             const selectedDate = orderDateInput.value;
 
             if (unsubscribe) unsubscribe();
 
-            if (useFirebase && db) {
-                try {
-                    const docRef = db.collection('orders').doc(selectedDate);
-                    unsubscribe = docRef.onSnapshot((docSnapshot) => {
-                        currentData = docSnapshot.exists ? docSnapshot.data() : {};
-                        renderUI();
-                    }, (error) => {
-                        console.error("Error reading from Firestore:", error);
-                    });
-                } catch (e) {
-                    console.error("Error setting up listener:", e);
-                }
-            } else {
-                const saved = localStorage.getItem('surya_orders_' + selectedDate);
-                currentData = saved ? JSON.parse(saved) : {};
-                renderUI();
+            try {
+                const docRef = db.collection('orders').doc(selectedDate);
+                unsubscribe = docRef.onSnapshot((docSnapshot) => {
+                    currentData = docSnapshot.exists ? docSnapshot.data() : {};
+                    renderUI();
+                }, (error) => {
+                    console.error("Error reading from Firestore:", error);
+                });
+            } catch (e) {
+                console.error("Error setting up listener:", e);
             }
-        }
-
-        function loadDateData() {
-            subscribeToData();
         }
 
         async function saveData() {
             const selectedDate = orderDateInput.value;
-            if (useFirebase && db) {
-                try {
-                    const docRef = db.collection('orders').doc(selectedDate);
-                    await docRef.set(currentData, { merge: true });
-                    console.log("✅ Data saved to Firestore");
-                } catch (err) {
-                    console.error("Error saving to Firestore:", err);
-                    alert("Error saving data. Please check Firestore connection.");
-                }
-            } else {
-                localStorage.setItem('surya_orders_' + selectedDate, JSON.stringify(currentData));
-                renderUI();
+            try {
+                const docRef = db.collection('orders').doc(selectedDate);
+                await docRef.set(currentData, { merge: true });
+                console.log("✅ Data saved to Firestore");
+            } catch (err) {
+                console.error("Error saving to Firestore:", err);
+                alert("Error saving data: " + err.message);
             }
         }
 
@@ -446,7 +434,7 @@
                         <details class="model-item" open>
                             <summary class="model-summary">
                                 <span><i class="fa-solid fa-microchip"></i> ${modelName}</span>
-                                <button class="btn btn-sm btn-danger" onclick="deleteModel(event, '${companyName}', '${modelName}')" title="Delete Model"><i class="fa-solid fa-trash-can"></i></button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteModel('${companyName}', '${modelName}')" title="Delete Model"><i class="fa-solid fa-trash-can"></i></button>
                             </summary>
                             <div class="details-content">
                                 <div class="items-grid">${itemsHTML}</div>
@@ -463,8 +451,8 @@
                     <summary class="company-summary">
                         <span><i class="fa-solid fa-building"></i> ${companyName}</span>
                         <div class="actions-group">
-                            <button class="btn btn-sm btn-secondary" onclick="addModel(event, '${companyName}')"><i class="fa-solid fa-plus"></i> Add Model</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteCompany(event, '${companyName}')" title="Delete Company"><i class="fa-solid fa-trash-can"></i></button>
+                            <button class="btn btn-sm btn-secondary" onclick="addModel('${companyName}')"><i class="fa-solid fa-plus"></i> Add Model</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCompany('${companyName}')" title="Delete Company"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </summary>
                     <div class="details-content models-container">${modelsHTML}</div>
@@ -476,17 +464,16 @@
 
         function addCompany() {
             const companyName = prompt("Enter New Company Name:");
-            if (!companyName) return;
+            if (!companyName || companyName.trim() === '') return;
             if (!currentData[companyName]) {
                 currentData[companyName] = {};
                 saveData();
             }
         }
 
-        function addModel(event, companyName) {
-            event.preventDefault();
+        function addModel(companyName) {
             const modelName = prompt("Enter New Model Name:");
-            if (!modelName) return;
+            if (!modelName || modelName.trim() === '') return;
 
             if (!currentData[companyName]) currentData[companyName] = {};
             if (!currentData[companyName][modelName]) {
@@ -527,19 +514,18 @@
                 return;
             }
             currentData[company][model][itemName] = '';
+            inputField.value = '';
             saveData();
         }
 
-        function deleteCompany(event, companyName) {
-            event.preventDefault();
+        function deleteCompany(companyName) {
             if (confirm(`Delete ${companyName} and all its models?`)) {
                 delete currentData[companyName];
                 saveData();
             }
         }
 
-        function deleteModel(event, companyName, modelName) {
-            event.preventDefault();
+        function deleteModel(companyName, modelName) {
             if (confirm(`Delete model ${modelName}?`)) {
                 delete currentData[companyName][modelName];
                 saveData();
@@ -551,8 +537,8 @@
             saveData();
         }
 
-        // Initialize Data Load
-        subscribeToData();
+        // Initialize when page loads
+        window.addEventListener('load', initializeDate);
     </script>
 </body>
 </html>
