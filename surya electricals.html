@@ -91,25 +91,33 @@
             gap: 8px;
         }
 
-        .date-picker-box {
+        .date-display-box {
             display: flex;
             align-items: center;
-            gap: 8px;
-            background: #f8f9fa;
-            border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            border-radius: 6px;
+            gap: 12px;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
             font-weight: bold;
-            color: var(--dark-color);
+            color: white;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
         }
 
-        .date-picker-box input[type="date"] {
-            border: 1px solid var(--border-color);
-            padding: 5px 8px;
-            border-radius: 4px;
-            font-family: inherit;
-            color: var(--dark-color);
-            font-size: 0.95rem;
+        .date-display-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(243, 156, 18, 0.4);
+        }
+
+        .date-display-box i {
+            font-size: 1.3rem;
+        }
+
+        .date-input-hidden {
+            display: none;
         }
 
         .btn {
@@ -246,10 +254,14 @@
             <h2 class="section-title"><i class="fa-solid fa-cart-shopping"></i> Order Section</h2>
             
             <div style="display: flex; gap: 15px; align-items: center;">
-                <div class="date-picker-box">
-                    <label for="order-date"><i class="fa-regular fa-calendar-days"></i> Order Date:</label>
-                    <input type="date" id="order-date" onchange="loadDateData()">
+                <!-- Beautiful Date Display Box -->
+                <div class="date-display-box" onclick="document.getElementById('order-date').click()">
+                    <i class="fa-regular fa-calendar-days"></i>
+                    <span id="date-display">Today</span>
                 </div>
+                <!-- Hidden Date Input -->
+                <input type="date" id="order-date" class="date-input-hidden" onchange="loadDateData()">
+                
                 <button class="btn" onclick="addCompany()"><i class="fa-solid fa-plus"></i> Add Company</button>
             </div>
         </div>
@@ -287,8 +299,48 @@
         }
 
         const orderDateInput = document.getElementById('order-date');
+        const dateDisplay = document.getElementById('date-display');
         const container = document.getElementById('companies-container');
-        orderDateInput.valueAsDate = new Date();
+
+        // Function to format date to readable format
+        function formatDateDisplay(dateString) {
+            const date = new Date(dateString);
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        // Function to check if date is today
+        function isToday(dateString) {
+            const today = new Date();
+            const compareDate = new Date(dateString);
+            return today.toDateString() === compareDate.toDateString();
+        }
+
+        // Set today's date by default
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        orderDateInput.value = `${year}-${month}-${day}`;
+
+        // Update date display
+        function updateDateDisplay() {
+            const dateValue = orderDateInput.value;
+            if (isToday(dateValue)) {
+                dateDisplay.textContent = 'Today';
+            } else {
+                dateDisplay.textContent = formatDateDisplay(dateValue);
+            }
+        }
+
+        // Initial date display update
+        updateDateDisplay();
+
+        // Update display when date changes
+        orderDateInput.addEventListener('change', () => {
+            updateDateDisplay();
+            loadDateData();
+        });
 
         const defaultItems = [
             "6A Switch", "16A Switch", "6A Socket", "16A Socket",
