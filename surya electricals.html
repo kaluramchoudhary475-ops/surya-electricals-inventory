@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surya Electricals - Live Inventory & Order Management</title>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #f39c12;
+            --danger-color: #e74c3c;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --border-color: #bdc3c7;
+            --bg-color: #f4f7f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .brand i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+        }
+
+        .brand h1 {
+            margin: 0;
+            color: var(--dark-color);
+            font-size: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid var(--primary-color);
+            padding-left: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--dark-color);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-picker-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8f9fa;
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            color: var(--dark-color);
+        }
+
+        .date-picker-box input[type="date"] {
+            border: 1px solid var(--border-color);
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            color: var(--dark-color);
+            font-size: 0.95rem;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .btn:hover { background-color: #d35400; }
+        .btn-sm { padding: 5px 10px; font-size: 0.85rem; }
+        .btn-secondary { background-color: #7f8c8d; }
+        .btn-secondary:hover { background-color: #626567; }
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-danger:hover { background-color: #c0392b; }
+
+        .btn-icon-danger {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 0.95rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .btn-icon-danger:hover { background-color: #fadbd8; }
+
+        details {
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        summary {
+            padding: 12px 15px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: var(--light-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        summary:hover { background-color: #e2e8f0; }
+
+        .company-summary {
+            font-size: 1.2rem;
+            color: var(--dark-color);
+            background-color: #e9ecef;
+        }
+
+        .model-summary {
+            font-size: 1rem;
+            color: #495057;
+            background-color: #f8f9fa;
+        }
+
+        .actions-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .details-content {
+            padding: 15px;
+            background-color: #ffffff;
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fdfdfd;
+            padding: 8px 12px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            gap: 8px;
+        }
+
+        .item-label { font-size: 0.95rem; font-weight: 500; flex-grow: 1; }
+        .item-input { width: 90px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 4px; text-align: center; }
+        select.item-input { width: 130px; }
+
+        .custom-item-builder {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .custom-item-builder input {
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Shop Header -->
+        <header>
+            <div class="brand">
+                <i class="fa-solid fa-bolt"></i>
+                <h1>Surya Electricals</h1>
+            </div>
+            <div>
+                <div class="sync-status" id="sync-status">
+                    <i class="fa-solid fa-circle-check"></i> Ready & Editable
+                </div>
+            </div>
+        </header>
+
+        <!-- Order Section Header with Date Selector -->
+        <div class="section-header">
+            <h2 class="section-title"><i class="fa-solid fa-cart-shopping"></i> Order Section</h2>
+            
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <div class="date-picker-box">
+                    <label for="order-date"><i class="fa-regular fa-calendar-days"></i> Order Date:</label>
+                    <input type="date" id="order-date" onchange="loadDateData()">
+                </div>
+                <button class="btn" onclick="addCompany()"><i class="fa-solid fa-plus"></i> Add Company</button>
+            </div>
+        </div>
+
+        <!-- Companies Container -->
+        <div id="companies-container"></div>
+    </div>
+
+    <!-- Script Block -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Optional: Replace with your actual Firebase config for live cloud syncing across employees
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        let db = null;
+        let useFirebase = false;
+
+        // Try initializing Firebase if keys are configured
+        if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getDatabase(app);
+                useFirebase = true;
+            } catch (e) {
+                console.warn("Firebase not configured properly, using Local Storage fallback.");
+            }
+        }
+
+        const orderDateInput = document.getElementById('order-date');
+        const container = document.getElementById('companies-container');
+        orderDateInput.valueAsDate = new Date();
+
+        const defaultItems = [
+            "6A Switch", "16A Switch", "6A Socket", "16A Socket",
+            "1M Plate", "2M Plate", "3M Plate", "4M Plate", "6M Plate",
+            "8M Plate Type", "12M Plate", "16M Plate", "18M Plate", "21M Plate",
+            "2 Way Switch", "1M Bell Switch", "2M Bell Switch"
+        ];
+
+        let currentData = {};
+
+        function subscribeToData() {
+            const selectedDate = orderDateInput.value;
+
+            if (useFirebase && db) {
+                const orderRef = ref(db, 'orders/' + selectedDate);
+                onValue(orderRef, (snapshot) => {
+                    currentData = snapshot.val() || {};
+                    renderUI();
+                });
+            } else {
+                const saved = localStorage.getItem('surya_orders_' + selectedDate);
+                currentData = saved ? JSON.parse(saved) : {};
+                renderUI();
+            }
+        }
+
+        window.loadDateData = subscribeToData;
+
+        function saveData() {
+            const selectedDate = orderDateInput.value;
+            if (useFirebase && db) {
+                set(ref(db, 'orders/' + selectedDate), currentData);
+            } else {
+                localStorage.setItem('surya_orders_' + selectedDate, JSON.stringify(currentData));
+                renderUI();
+            }
+        }
+
+        function renderUI() {
+            container.innerHTML = '';
+            const companies = Object.keys(currentData);
+
+            if (companies.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#999; padding: 20px;">No companies added yet. Click "+ Add Company" above to add your first company.</p>';
+                return;
+            }
+
+            companies.forEach(companyName => {
+                const companyDetails = document.createElement('details');
+                companyDetails.className = 'company-item';
+                companyDetails.open = true;
+
+                let modelsHTML = '';
+                const models = currentData[companyName] || {};
+
+                Object.keys(models).forEach(modelName => {
+                    const items = models[modelName] || {};
+                    let itemsHTML = '';
+
+                    Object.keys(items).forEach(itemName => {
+                        const itemVal = items[itemName];
+
+                        if (itemName === "8M Plate Type") {
+                            const plateType = typeof itemVal === 'object' ? (itemVal.type || 'horizontal') : 'horizontal';
+                            const qty = typeof itemVal === 'object' ? (itemVal.qty || '') : itemVal;
+
+                            itemsHTML += `
+                                <div class="item-row">
+                                    <span class="item-label">8M Plate Type</span>
+                                    <select class="item-input" onchange="window.updateStock('${companyName}', '${modelName}', '8M Plate Type', this.value, true)">
+                                        <option value="horizontal" ${plateType === 'horizontal' ? 'selected' : ''}>Horizontal 8M</option>
+                                        <option value="square" ${plateType === 'square' ? 'selected' : ''}>Sq Plate 8M</option>
+                                    </select>
+                                    <input type="number" class="item-input" placeholder="Stock" min="0" value="${qty}" oninput="window.updateStock('${companyName}', '${modelName}', '8M Plate Type', this.value, false)">
+                                    <button class="btn-icon-danger" onclick="window.deleteItem('${companyName}', '${modelName}', '8M Plate Type')" title="Delete Item"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            `;
+                        } else {
+                            itemsHTML += `
+                                <div class="item-row">
+                                    <span class="item-label">${itemName}</span>
+                                    <input type="number" class="item-input" placeholder="Stock" min="0" value="${itemVal || ''}" oninput="window.updateStock('${companyName}', '${modelName}', '${itemName}', this.value)">
+                                    <button class="btn-icon-danger" onclick="window.deleteItem('${companyName}', '${modelName}', '${itemName}')" title="Delete Item"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            `;
+                        }
+                    });
+
+                    modelsHTML += `
+                        <details class="model-item" open>
+                            <summary class="model-summary">
+                                <span><i class="fa-solid fa-microchip"></i> ${modelName}</span>
+                                <button class="btn btn-sm btn-danger" onclick="window.deleteModel(event, '${companyName}', '${modelName}')" title="Delete Model"><i class="fa-solid fa-trash-can"></i></button>
+                            </summary>
+                            <div class="details-content">
+                                <div class="items-grid">${itemsHTML}</div>
+                                <div class="custom-item-builder">
+                                    <input type="text" placeholder="Add custom item name..." id="custom-input-${companyName}-${modelName}">
+                                    <button class="btn btn-sm" onclick="window.addCustomItem('${companyName}', '${modelName}')"><i class="fa-solid fa-plus"></i> Add Item</button>
+                                </div>
+                            </div>
+                        </details>
+                    `;
+                });
+
+                companyDetails.innerHTML = `
+                    <summary class="company-summary">
+                        <span><i class="fa-solid fa-building"></i> ${companyName}</span>
+                        <div class="actions-group">
+                            <button class="btn btn-sm btn-secondary" onclick="window.addModel(event, '${companyName}')"><i class="fa-solid fa-plus"></i> Add Model</button>
+                            <button class="btn btn-sm btn-danger" onclick="window.deleteCompany(event, '${companyName}')" title="Delete Company"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </summary>
+                    <div class="details-content models-container">${modelsHTML}</div>
+                `;
+
+                container.appendChild(companyDetails);
+            });
+        }
+
+        window.addCompany = () => {
+            const companyName = prompt("Enter New Company Name:");
+            if (!companyName) return;
+            if (!currentData[companyName]) {
+                currentData[companyName] = {};
+                saveData();
+            }
+        };
+
+        window.addModel = (event, companyName) => {
+            event.preventDefault();
+            const modelName = prompt("Enter New Model Name:");
+            if (!modelName) return;
+
+            if (!currentData[companyName]) currentData[companyName] = {};
+            if (!currentData[companyName][modelName]) {
+                currentData[companyName][modelName] = {};
+                defaultItems.forEach(item => {
+                    if (item === "8M Plate Type") {
+                        currentData[companyName][modelName][item] = { type: 'horizontal', qty: '' };
+                    } else {
+                        currentData[companyName][modelName][item] = '';
+                    }
+                });
+                saveData();
+            }
+        };
+
+        window.updateStock = (company, model, item, value, isDropdown = false) => {
+            if (!currentData[company]?.[model]) return;
+
+            if (item === "8M Plate Type") {
+                const currentObj = currentData[company][model][item] || { type: 'horizontal', qty: '' };
+                if (isDropdown) {
+                    currentObj.type = value;
+                } else {
+                    currentObj.qty = value;
+                }
+                currentData[company][model][item] = currentObj;
+            } else {
+                currentData[company][model][item] = value;
+            }
+            saveData();
+        };
+
+        window.addCustomItem = (company, model) => {
+            const inputField = document.getElementById(`custom-input-${company}-${model}`);
+            const itemName = inputField.value.trim();
+            if (!itemName) {
+                alert("Please enter a valid item name!");
+                return;
+            }
+            currentData[company][model][itemName] = '';
+            saveData();
+        };
+
+        window.deleteCompany = (event, companyName) => {
+            event.preventDefault();
+            if (confirm(`Delete ${companyName} and all its models?`)) {
+                delete currentData[companyName];
+                saveData();
+            }
+        };
+
+        window.deleteModel = (event, companyName, modelName) => {
+            event.preventDefault();
+            if (confirm(`Delete model ${modelName}?`)) {
+                delete currentData[companyName][modelName];
+                saveData();
+            }
+        };
+
+        window.deleteItem = (companyName, modelName, itemName) => {
+            delete currentData[companyName][modelName][itemName];
+            saveData();
+        };
+
+        // Initialize Data Load
+        subscribeToData();
+    </script>
+</body>
+</html>
